@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NASA Gigapixel Explorer</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-content">
+            <h1>🔭 NASA Gigapixel Explorer</h1>
+            <div class="header-controls">
+                <button id="settings-btn" class="icon-btn" title="Settings">⚙️</button>
+                <button id="help-btn" class="icon-btn" title="Help">❓</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Left Sidebar: Tools & Controls -->
+        <aside class="sidebar">
+            <div class="tool-section">
+                <h3>🗺️ Navigation</h3>
+                <div class="zoom-controls">
+                    <button onclick="zoomIn()">🔍 Zoom In</button>
+                    <button onclick="zoomOut()">🔍 Zoom Out</button>
+                    <button onclick="resetView()">🏠 Reset</button>
+                </div>
+                <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                        💡 Double-click on overview to open region
+                    </p>
+                    <label style="font-size: 0.85rem; display: block; margin-bottom: 0.25rem;">Open Tile by Number:</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="number" id="tile-row" placeholder="Row" min="0" style="width: 60px; padding: 0.4rem; background: var(--secondary-bg); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary); font-size: 0.85rem;">
+                        <input type="number" id="tile-col" placeholder="Col" min="0" style="width: 60px; padding: 0.4rem; background: var(--secondary-bg); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary); font-size: 0.85rem;">
+                        <button onclick="openTileByNumber()" style="flex: 1; padding: 0.4rem;">Open</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tool-section">
+                <h3>🏷️ Labeling Tools</h3>
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.75rem; font-style: italic;">
+                    ⚠️ Works on detail tiles only
+                </p>
+                <div class="label-controls">
+                    <button id="draw-bbox-btn" class="tool-btn" onclick="activateDrawMode()">✏️ Draw BBox</button>
+                    <button id="select-mode-btn" class="tool-btn active" onclick="activateSelectMode()">👆 Pan/Zoom</button>
+                    <input type="text" id="label-name" placeholder="Label name (optional)">
+                    <select id="label-category">
+                        <option value="star">⭐ Star</option>
+                        <option value="galaxy">🌌 Galaxy</option>
+                        <option value="crater">🌑 Crater</option>
+                        <option value="feature">✨ Feature</option>
+                        <option value="custom">📝 Custom</option>
+                    </select>
+                    <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                        💡 Draw a box on a tile to label
+                    </p>
+                </div>
+                <div class="label-list">
+                    <h4>Saved Labels (0)</h4>
+                    <div id="labels-container"></div>
+                </div>
+            </div>
+
+            <div class="tool-section">
+                <h3>🤖 AI Analysis</h3>
+                <div class="ai-controls">
+                    <label>
+                        <input type="radio" name="image-source" value="full" checked> Full Image
+                    </label>
+                    <label>
+                        <input type="radio" name="image-source" value="region"> Current Region
+                    </label>
+                    <textarea id="ai-question-input" rows="3" placeholder="Ask about the image..."></textarea>
+                    <button id="ask-ai-btn" onclick="askAI()">Ask AI</button>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- Center: Main Viewing Area -->
+        <main class="viewer-area">
+            <!-- Image Upload Section -->
+            <div id="upload-section" class="upload-container active">
+                <div class="upload-content">
+                    <h2>🚀 NASA Gigapixel Explorer</h2>
+                    <p style="margin: 1rem 0; color: var(--text-secondary);">
+                        Upload a large NASA image to explore and analyze
+                    </p>
+
+                    <div class="upload-area" id="upload-area">
+                        <div class="upload-icon">📁</div>
+                        <h3>Drop your image here or click to browse</h3>
+                        <p>Supports JPG, PNG (up to 100MB)</p>
+                        <input type="file" id="image-upload" accept="image/jpeg,image/png,image/jpg" style="display: none;">
+                        <button onclick="document.getElementById('image-upload').click()" class="upload-btn">
+                            Choose Image
+                        </button>
+                    </div>
+
+                    <div id="processing-status" style="display: none; margin-top: 2rem;">
+                        <div class="progress-container">
+                            <div class="progress-bar" id="progress-bar"></div>
+                        </div>
+                        <p id="status-text" style="margin-top: 1rem; text-align: center;">Processing...</p>
+                    </div>
+
+                    <div style="margin-top: 2rem; padding: 1.5rem; background: var(--accent-bg); border-radius: 8px;">
+                        <h4>Or use the preprocessed sample:</h4>
+                        <button onclick="loadSampleImage()" class="upload-btn" style="margin-top: 0.5rem;">
+                            Load Andromeda Galaxy Sample
+                        </button>
+                    </div>
+
+                    <div style="margin-top: 2rem; font-size: 0.85rem; color: var(--text-secondary);">
+                        <h4>Tips:</h4>
+                        <ul style="list-style: none; padding: 0;">
+                            <li>✓ Larger images work better (e.g., 10000x5000+)</li>
+                            <li>✓ Processing may take 10-30 seconds for large images</li>
+                            <li>✓ Images are processed in your browser (not uploaded)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overview Canvas (Level 1) -->
+            <div id="overview-container" class="canvas-container">
+                <div class="canvas-header">
+                    <h3>Overview Map</h3>
+                    <div class="view-info">
+                        <span id="current-zoom">Zoom: 1x</span>
+                        <span id="cursor-pos">Position: -</span>
+                    </div>
+                </div>
+                <div class="canvas-wrapper">
+                    <canvas id="overview-canvas"></canvas>
+                    <div id="grid-overlay"></div>
+                </div>
+                <div class="minimap">
+                    <canvas id="minimap-canvas"></canvas>
+                </div>
+            </div>
+
+            <!-- Detail Tabs Container (Level 2) -->
+            <div id="detail-tabs-container">
+                <div class="tabs-header">
+                    <div id="tabs-list"></div>
+                    <button id="close-all-tabs" onclick="closeAllTabs()">✕ Close All</button>
+                </div>
+                <div id="tab-contents"></div>
+            </div>
+        </main>
+
+        <!-- Right Panel: AI Chat & Info -->
+        <aside class="right-panel">
+            <div class="panel-tabs">
+                <button class="panel-tab active" onclick="switchPanel('chat')">💬 AI Chat</button>
+                <button class="panel-tab" onclick="switchPanel('info')">ℹ️ Info</button>
+            </div>
+
+            <!-- AI Chat Panel -->
+            <div id="ai-chat-panel" class="panel-content active">
+                <div class="chat-header">
+                    <h3>AI Conversation</h3>
+                    <button onclick="clearChatHistory()">Clear</button>
+                </div>
+                <div id="ai-chat-canvas" class="chat-messages"></div>
+                <div class="chat-stats">
+                    <span id="total-tokens">Tokens: 0</span>
+                    <span id="total-cost">Cost: $0.00</span>
+                </div>
+            </div>
+
+            <!-- Info Panel -->
+            <div id="info-panel" class="panel-content">
+                <h3>Image Information</h3>
+                <div id="image-metadata">
+                    <p><strong>Source:</strong> <span id="meta-source">-</span></p>
+                    <p><strong>Dimensions:</strong> <span id="meta-dimensions">-</span></p>
+                    <p><strong>Mission:</strong> <span id="meta-mission">-</span></p>
+                    <p><strong>Date:</strong> <span id="meta-date">-</span></p>
+                    <p><strong>Wavelength:</strong> <span id="meta-wavelength">-</span></p>
+                </div>
+                <div class="statistics">
+                    <h4>Statistics</h4>
+                    <p>Labels: <span id="stat-labels">0</span></p>
+                    <p>Tiles Loaded: <span id="stat-tiles">0</span></p>
+                    <p>AI Queries: <span id="stat-queries">0</span></p>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeSettings()">&times;</span>
+            <h2>Settings</h2>
+
+            <div class="settings-section">
+                <h3>OpenAI API Configuration</h3>
+                <p id="api-key-status" style="margin-bottom: 0.5rem; font-size: 0.9rem;"></p>
+                <label>API Key:</label>
+                <input type="password" id="openai-key-input" placeholder="sk-proj-...">
+                <button onclick="saveAPIKey()">Save API Key</button>
+                <p class="note">Your API key is stored locally and only sent to OpenAI. Model: gpt-4o</p>
+            </div>
+
+            <div class="settings-section">
+                <h3>Display Settings</h3>
+                <label>
+                    Grid Overlay: <input type="checkbox" id="show-grid" checked onchange="toggleGrid()">
+                </label>
+                <label>
+                    Show Minimap: <input type="checkbox" id="show-minimap" checked onchange="toggleMinimap()">
+                </label>
+                <label>
+                    Tile Size:
+                    <select id="tile-size">
+                        <option value="256">256px</option>
+                        <option value="512" selected>512px</option>
+                        <option value="1024">1024px</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="settings-section">
+                <h3>Data Management</h3>
+                <button onclick="exportLabels()">📥 Export Labels</button>
+                <button onclick="importLabels()">📤 Import Labels</button>
+                <button onclick="clearCache()">🗑️ Clear Cache</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeHelp()">&times;</span>
+            <h2>Help & Tutorial</h2>
+            <div class="help-content">
+                <h3>Getting Started</h3>
+                <ol>
+                    <li>Click on the overview map to select a region</li>
+                    <li>Use zoom controls or mouse wheel to zoom in/out</li>
+                    <li>Click "Draw BBox" to label features</li>
+                    <li>Ask AI questions about any region</li>
+                </ol>
+
+                <h3>Keyboard Shortcuts</h3>
+                <ul>
+                    <li><kbd>Space</kbd> - Pan mode</li>
+                    <li><kbd>+/-</kbd> - Zoom in/out</li>
+                    <li><kbd>R</kbd> - Reset view</li>
+                    <li><kbd>D</kbd> - Draw mode</li>
+                    <li><kbd>Esc</kbd> - Cancel action</li>
+                </ul>
+
+                <h3>Navigation</h3>
+                <p>Open tiles by entering row and column numbers in the navigation panel.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="spinner"></div>
+        <p>Processing...</p>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/imageManager.js"></script>
+    <script src="js/imageProcessor.js"></script>
+    <script src="js/canvasManager.js"></script>
+    <script src="js/labelManager.js"></script>
+    <script src="js/aiManager.js"></script>
+    <script src="js/featureDetection.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
